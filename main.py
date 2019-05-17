@@ -1,63 +1,67 @@
 #!/usr/bin/env python3
 
-ESC = b"\x1B"  # ESC character
+import receipt_printer
+from receipt_printer import Block_char, Player_char
 
-BLOCK_EMPTY = b"\x20"
-BLOCK_LIGHT = b"\xB0"
-BLOCK_MED = b"\xB1"
-BLOCK_HEAVY = b"\xB2"
-BLOCK_FULL = b"\xDB"
+class Player(object):
+    def __init__(self):
+        self.position = int(receipt_printer.PAGE_WIDTH) / 2
+        self.direction = 0  # 0=Right, 1=Left
 
-RIGHT = b"\x5C"
-LEFT = b"\x2F"
+    def advance(self):
+        if self.direction == Player_char.RIGHT:
+            self.position += 1
+            if self.position == (receipt_printer.PAGE_WIDTH - 1):
+                self.change_direction()
 
-shading = [BLOCK_LIGHT, BLOCK_MED, BLOCK_HEAVY, BLOCK_FULL]
+        elif self.direction == Player_char.LEFT:
+            self.position -= 1
+            if self.position == 0:
+                self.change_direction()
 
-# PAGE_WIDTH = 48
-PAGE_WIDTH = 10
+    def change_direction(self):
+        self.direction = (self.direction + 1) % 2
 
-def select_code_page(n: int):
-    return ESC + b"\x1D\x74" + bytes([n])
-
-def get_line(position, direction, shade):
-    return BLOCK_EMPTY * 20 + (position) * shade + direction + (PAGE_WIDTH - position - 1) * shade
+    def get_direction_char(self):
+        if self.direction == 0:
+            return Player_char.RIGHT
+        elif self.direction == 1:
+            return Player_char.LEFT
+        else:
+            print("INVALID DIRECTION")
+            return None
+        
+        
+# class Block(object):
+#     def __init__(self, position=None):
+#         if position == None:
 
 def other_direction(direction):
-    if direction == LEFT:
-        return RIGHT
-    elif direction == RIGHT:
-        return LEFT
+    if direction == Player_char.LEFT:
+        return Player_char.RIGHT
+    elif direction == Player_char.RIGHT:
+        return Player_char.LEFT
     else:
         print("YO WHAT THE FUCK GIMME A REAL DIRECTION")
-        return RIGHT
-
-def test_shade():
-    for s in shading:
-        for i in range(5):
-            f.write(s*PAGE_WIDTH+b"\n")
+        return Player_char.RIGHT
 
 if __name__ == "__main__":
-    position = 0
     shade_id = 0
-    direction = RIGHT
+    # position = 0
+    # direction = Player_char.RIGHT
+    player = Player()
 
-    with open("/dev/lp0", 'wb') as f:
-        f.write(select_code_page(1))
+    with receipt_printer.open_descriptor() as printer:
+        printer.write(receipt_printer.select_code_page(1))
 
         for i in range(30):
             if not((i+1) % 10):
                 shade_id += 1
 
-            f.write(get_line(position, direction, shading[shade_id])+b"\n")
+            printer.write(receipt_printer.get_line(player.position, player.get_direction_char(), Block_char.SHADES[shade_id])+b"\n")
             
-            if direction == RIGHT:
-                position += 1
-                if position == (PAGE_WIDTH - 1):
-                    direction = other_direction(direction)
-            elif direction == LEFT:
-                position -= 1
-                if position == 0:
-                    direction = other_direction(direction)
+            
+            player.advance()
 
 
-        f.write(select_code_page(0))
+        printer.write(receipt_printer.select_code_page(0))
