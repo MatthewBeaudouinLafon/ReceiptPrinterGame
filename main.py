@@ -18,14 +18,14 @@ NEW_BLOCK_LIKELIHOOD = 0.3
 
 class Player(object):
     def __init__(self):
-        self.position: int = int(receipt_printer.PAGE_WIDTH) / 2
+        self.position = int(receipt_printer.PAGE_WIDTH) / 2
         self.direction = 1  # 0=Right, 1=Left
 
     def advance(self):
         if self.direction == 0:  # Right
             self.position += 1
             if self.position == (receipt_printer.PAGE_WIDTH - 1):
-                self.change_direction()
+                self.change_direction() 
 
         elif self.direction == 1:  # Left
             self.position -= 1
@@ -55,7 +55,7 @@ class Block(object):
     LIFETIME = 5
 
     def __init__(self):
-        self.position = random.randint(0, receipt_printer.PAGE_WIDTH - Block.WIDTH)
+        self.position = random.randint(0, receipt_printer.PAGE_WIDTH - Block.WIDTH - 1)
         self.shade_id = 1
         self.phase_age = 0
 
@@ -97,12 +97,17 @@ if __name__ == "__main__":
     paused = False
 
     # try:
-    # with receipt_printer.open_descriptor() as printer:
-    with open_test_file() as printer:
+    with receipt_printer.open_descriptor() as printer:
+    # with open_test_file() as printer:
         printer.write(receipt_printer.select_code_page(1))
+        # receipt_printer.test_shade(printer)
         
         while (key != ord('x')):
             time.sleep(FRAME_LENGTH)
+
+            ##
+            # printer.write(receipt_printer.str_to_print("   LLLMMM/HHHFFF   "))
+            ##
 
             # Handle key input
             key = stdscr.getch()
@@ -134,7 +139,7 @@ if __name__ == "__main__":
 
                 # Render block
                 if block != None:
-                    for i in range(block.position, (block.position + 5)):
+                    for i in range(block.position, (block.position + Block.WIDTH)):
                         line[i] = block.get_line_char()
 
                 if line[int(player.position)] == Block_char.FULL:  # block collision
@@ -146,8 +151,9 @@ if __name__ == "__main__":
 
                 # ship it to printer
                 print_line = receipt_printer.str_to_print(''.join(line))
+                # print(print_line)
                 printer.write(print_line)
-                # printer.write(receipt_printer.get_line(int(player.position), player.get_direction_char(), Block_char.SHADES[shade_id])+b"\n")
+                printer.flush()
 
         printer.write(receipt_printer.select_code_page(0))
 

@@ -20,12 +20,12 @@ class Player_char:
 
 ESC = b"\x1B"  # ESC character
 
-PRINTER_WIDTH = 48
-PAGE_WIDTH = 20
+PRINTER_WIDTH = 48  # what the printer can handle
+PAGE_WIDTH = 48  # Exposed to API
 
 """wrapper to use with a "with" statement"""
 def open_descriptor():
-    return open("/dev/lp0", 'wb')
+    return open("/dev/lp0", 'wb', 0)
 
 """ select_code_page(n: int)
 n: code page number (defined by printer)
