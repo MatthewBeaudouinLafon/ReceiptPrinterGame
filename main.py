@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import time
+import random
 import curses
 from curses import textpad
 
@@ -8,6 +9,7 @@ import receipt_printer
 from receipt_printer import Block_char, Player_char
 
 FRAME_LENGTH = 0.1
+NEW_BLOCK_LIKELIHOOD = 0.3
 
 # TODO: Show something on terminal window - instructions, length?
 # TODO: Wrap-around mode?
@@ -48,9 +50,33 @@ class Player(object):
             return None
         
         
-# class Block(object):
-#     def __init__(self, position=None):
-#         if position == None:
+class Block(object):
+    WIDTH = 4
+    LIFETIME = 5
+
+    def __init__(self):
+        self.position = random.randint(0, receipt_printer.PAGE_WIDTH - Block.WIDTH)
+        self.shade_id = 1
+        self.phase_age = 0
+
+    def advance(self):
+        self.phase_age += 1
+
+        if self.phase_age == Block.LIFETIME:
+            self.phase_age = 0
+            self.shade_id += 1
+
+        if self.shade_id == len(Block_char.SHADES):
+            return True
+
+        return False
+
+    def get_line_char(self):
+        shades = 'ELMHF'
+        if (self.shade_id >= len(Block_char.SHADES)):
+            print("Warning: shade_id too big")
+            return 'F'
+        return shades[self.shade_id]
 
 def open_test_file():
     return open("test.txt", 'wb')
@@ -64,7 +90,7 @@ if __name__ == "__main__":
     stdscr.keypad(True)
     stdscr.nodelay(True)
 
-    shade_id = 0
+    block = None
 
     player = Player()
     key = None
@@ -91,11 +117,34 @@ if __name__ == "__main__":
 
             if not paused:
                 player.advance()
+                
+                if block == None:
+                    if random.random() < NEW_BLOCK_LIKELIHOOD:
+                        block = Block()
+                else:
+                    end_of_block = block.advance()
 
+                    if end_of_block:
+                        del block
+                        block = None
+
+                ### Rendering
+                # space as background
                 line = list(" " * receipt_printer.PAGE_WIDTH)
 
-                line[int(player.position)] = player.get_direction_char()
-                
+                # Render block
+                if block != None:
+                    for i in range(block.position, (block.position + 5)):
+                        line[i] = block.get_line_char()
+
+                if line[int(player.position)] == Block_char.FULL:  # block collision
+                    printer.write(b'bye')
+                    break
+                else:
+                    # player rendering
+                    line[int(player.position)] = player.get_direction_char()
+
+                # ship it to printer
                 print_line = receipt_printer.str_to_print(''.join(line))
                 printer.write(print_line)
                 # printer.write(receipt_printer.get_line(int(player.position), player.get_direction_char(), Block_char.SHADES[shade_id])+b"\n")
