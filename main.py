@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 
-import sys
-import select
 import time
-
 import curses
 from curses import textpad
 
 import receipt_printer
 from receipt_printer import Block_char, Player_char
 
+FRAME_LENGTH = 0.1
+
+# TODO: Show something on terminal window - instructions, length?
+# TODO: Wrap-around mode?
+# TODO: Increasing speed?
+# TODO: Figure out why player.position keeps going float
+
 class Player(object):
     def __init__(self):
-        self.position = int(receipt_printer.PAGE_WIDTH) / 2
-        self.direction = 0  # 0=Right, 1=Left
+        self.position: int = int(receipt_printer.PAGE_WIDTH) / 2
+        self.direction = 1  # 0=Right, 1=Left
 
     def advance(self):
         if self.direction == 0:  # Right
@@ -34,9 +38,11 @@ class Player(object):
 
     def get_direction_char(self):
         if self.direction == 0:
-            return Player_char.RIGHT
+            # return Player_char.RIGHT
+            return '\\'
         elif self.direction == 1:
-            return Player_char.LEFT
+            # return Player_char.LEFT
+            return '/'
         else:
             print("INVALID DIRECTION")
             return None
@@ -63,41 +69,45 @@ if __name__ == "__main__":
     player = Player()
     key = None
     paused = False
-    
-    # ### TEST LOOP
-    # with open_test_file() as printer:
-    #     while True:
-    #         time.sleep(0.1)
-    #         player.advance()
-    #         print(player.position)
-    #         printer.write(receipt_printer.get_line(int(player.position), player.get_direction_char(), Block_char.SHADES[shade_id])+b"\n")
 
-
-    ### REAL GAME LOOP
+    # try:
     # with receipt_printer.open_descriptor() as printer:
     with open_test_file() as printer:
         printer.write(receipt_printer.select_code_page(1))
         
         while (key != ord('x')):
-            time.sleep(0.1)
+            time.sleep(FRAME_LENGTH)
 
             # Handle key input
             key = stdscr.getch()
             curses.flushinp()  # flush buffer key buffer to diminish delay
             
-            if (key == curses.KEY_RIGHT):
+            if (key == ord(' ')):
+                paused = not paused
+            elif (key == curses.KEY_RIGHT):
                 player.direction = 0
             elif (key == curses.KEY_LEFT):
                 player.direction = 1
-            elif (key == ' '):
-                paused = not paused
 
             if not paused:
                 player.advance()
+
+                line = list(" " * receipt_printer.PAGE_WIDTH)
+
+                line[int(player.position)] = player.get_direction_char()
                 
-            printer.write(receipt_printer.get_line(int(player.position), player.get_direction_char(), Block_char.SHADES[shade_id])+b"\n")
+                print_line = receipt_printer.str_to_print(''.join(line))
+                printer.write(print_line)
+                # printer.write(receipt_printer.get_line(int(player.position), player.get_direction_char(), Block_char.SHADES[shade_id])+b"\n")
 
         printer.write(receipt_printer.select_code_page(0))
+
+    # except: 
+    #     curses.nocbreak()
+    #     stdscr.keypad(False)
+    #     curses.echo()
+    #     curses.endwin()
+
 
     curses.nocbreak()
     stdscr.keypad(False)

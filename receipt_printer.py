@@ -20,7 +20,7 @@ class Player_char:
 
 ESC = b"\x1B"  # ESC character
 
-# PAGE_WIDTH = 48
+PRINTER_WIDTH = 48
 PAGE_WIDTH = 20
 
 """wrapper to use with a "with" statement"""
@@ -61,7 +61,7 @@ Converts a simple representation of the line to be printed.
 'H' -> heavy shade block
 'F' -> ful; shade block
 """
-def str_to_print(string):
+def str_to_print(line):
     converter = {
         ' ' : Block_char.EMPTY,
         'L' : Block_char.LIGHT,
@@ -72,8 +72,13 @@ def str_to_print(string):
         '/' : Player_char.LEFT
     }
 
-    result = [converter[char] for char in string]
-    return ''.join(result)
+    # TODO: Padding for smaller windows
+    result = b''
+    for char in line:
+        result += converter[char]
+    result += b'\n'
+
+    return result
 
 """ test_shade(printer)
 printer: printer file descriptor
