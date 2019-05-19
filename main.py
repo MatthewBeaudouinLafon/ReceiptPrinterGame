@@ -66,7 +66,7 @@ class Block(object):
             self.phase_age = 0
             self.shade_id += 1
 
-        if self.shade_id == len(Block_char.SHADES):
+        if self.shade_id == (len(Block_char.SHADES) - 1):
             return True
 
         return False
@@ -100,14 +100,17 @@ if __name__ == "__main__":
     # with receipt_printer.open_descriptor() as printer:
     with open_test_file() as printer:
         printer.write(receipt_printer.select_code_page(1))
+        printer.flush()
         # receipt_printer.test_shade(printer)
         
         while (key != ord('x')):
             # time.sleep(0.001)
-            # time.sleep(FRAME_LENGTH)
-            n = 0
-            while (n < 12500000):
-                n += 1
+            time.sleep(FRAME_LENGTH)
+            
+            ### "time.sleep"
+            # n = 0
+            # while (n < 12500000):
+            #     n += 1
 
             ##
             # printer.write(receipt_printer.str_to_print("   LLLMMM/HHHFFF   "))
@@ -124,42 +127,45 @@ if __name__ == "__main__":
             elif (key == curses.KEY_LEFT):
                 player.direction = 1
 
-            if not paused:
-                player.advance()
-                
-                if block == None:
-                    if random.random() < NEW_BLOCK_LIKELIHOOD:
-                        block = Block()
-                else:
-                    end_of_block = block.advance()
+            if paused:
+                continue
 
-                    if end_of_block:
-                        del block
-                        block = None
+            player.advance()
+            
+            if block == None:
+                if random.random() < NEW_BLOCK_LIKELIHOOD:
+                    block = Block()
+            else:
+                end_of_block = block.advance()
 
-                ### Rendering
-                # space as background
-                line = list(" " * receipt_printer.PAGE_WIDTH)
+                if end_of_block:
+                    del block
+                    block = None
 
-                # Render block
-                if block != None:
-                    for i in range(block.position, (block.position + Block.WIDTH)):
-                        line[i] = block.get_line_char()
+            ### Rendering
+            # space as background
+            line = list(" " * receipt_printer.PAGE_WIDTH)
 
-                if line[int(player.position)] == Block_char.FULL:  # block collision
-                    printer.write(b'bye')
-                    break
-                else:
-                    # player rendering
-                    line[int(player.position)] = player.get_direction_char()
+            # Render block
+            if block != None:
+                for i in range(block.position, (block.position + Block.WIDTH)):
+                    line[i] = block.get_line_char()
 
-                # ship it to printer
-                print_line = receipt_printer.str_to_print(''.join(line))
-                # print(print_line)
-                printer.write(print_line)
-                printer.flush()
+            if line[int(player.position)] == Block_char.FULL:  # block collision
+                printer.write(b'bye')
+                break
+            else:
+                # player rendering
+                line[int(player.position)] = player.get_direction_char()
+
+            # ship it to printer
+            print_line = receipt_printer.str_to_print(''.join(line))
+            # print(print_line)
+            printer.write(print_line)
+            printer.flush()
 
         printer.write(receipt_printer.select_code_page(0))
+        printer.flush()
 
     # except: 
     #     curses.nocbreak()
