@@ -1,7 +1,7 @@
 ## receipt_printer.py
 # This file should handle all of the receipt printer interaction.
 # It also defines redefinitions of characters. 
-
+import time
 
 class Block_char:
     EMPTY = b"\x20"
@@ -87,5 +87,6 @@ prints a gradient to test the characters work as intended.
 """
 def test_shade(printer):
     for s in Block_char.SHADES:
-        for _ in range(5):
+        for _ in range(2):
             printer.write(s * PAGE_WIDTH + b"\n")
+    time.sleep(5)

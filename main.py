@@ -97,13 +97,17 @@ if __name__ == "__main__":
     paused = False
 
     # try:
-    with receipt_printer.open_descriptor() as printer:
-    # with open_test_file() as printer:
+    # with receipt_printer.open_descriptor() as printer:
+    with open_test_file() as printer:
         printer.write(receipt_printer.select_code_page(1))
         # receipt_printer.test_shade(printer)
         
         while (key != ord('x')):
-            time.sleep(FRAME_LENGTH)
+            # time.sleep(0.001)
+            # time.sleep(FRAME_LENGTH)
+            n = 0
+            while (n < 12500000):
+                n += 1
 
             ##
             # printer.write(receipt_printer.str_to_print("   LLLMMM/HHHFFF   "))
